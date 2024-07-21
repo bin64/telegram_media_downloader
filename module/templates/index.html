@@ -39,6 +39,15 @@
     </div>
   </div>
 
+  <div class="layui-row" style="margin-top: 20px;">
+    <div class="layui-col-md10">
+      <input type="text" id="tgURL" placeholder="Enter Telegram URL" class="layui-input">
+    </div>
+    <div class="layui-col-md2">
+      <button class="layui-btn layui-btn-normal" onclick="addWebTask()">Add Task</button>
+    </div>
+  </div>
+
   <div class="layui-footer">
     <div class="layui-row layui-col-space1">
       <div class="layui-col-md2">
@@ -64,7 +73,6 @@
 
   <script src="../static/layui/layui.js"></script>
   <script>
-
     layui.use(['table', 'element'], function () {
       var table = layui.table;
       var element = layui.element;
@@ -74,40 +82,40 @@
       var download_list_table_data = new Array()
 
       $.ajax({
-        url: "get_app_version"
-        , type: "get"
-        , async: false
-        , dataType: "text"
-        , success: function (result) {
+        url: "get_app_version",
+        type: "get",
+        async: false,
+        dataType: "text",
+        success: function (result) {
           $("#app_version").html(result)
         }
       });
 
-      download_state_change = function(e) {
+      download_state_change = function (e) {
         $.ajax({
-        url: "set_download_state?state=" + e.dataset.value
-        , type: "post"
-        , async: false
-        , dataType: "text"
-        , success: function (result) {
-          $("#download_state").html(result)
-          e.dataset.value=result
-        }
-      });
-    }
+          url: "set_download_state?state=" + e.dataset.value,
+          type: "post",
+          async: false,
+          dataType: "text",
+          success: function (result) {
+            $("#download_state").html(result)
+            e.dataset.value = result
+          }
+        });
+      }
 
       tableIns = table.render({
-        elem: '#download_list'
-        , data: download_list_table_data
-        , title: 'download_list'
-        , height: 'full-160'
-        , limit: 10000
-        , cols: [[
+        elem: '#download_list',
+        data: download_list_table_data,
+        title: 'download_list',
+        height: 'full-160',
+        limit: 10000,
+        cols: [[
           { field: 'chat', title: 'chat', width: 100 },
-          { field: 'id', title: 'id', width: 100 }
-          , { field: 'filename', title: 'file name', align: 'center' }
-          , { field: 'total_size', title: 'total byte', align: 'center' }
-          , {
+          { field: 'id', title: 'id', width: 100 },
+          { field: 'filename', title: 'file name', align: 'center' },
+          { field: 'total_size', title: 'total byte', align: 'center' },
+          {
             field: 'download_progress', title: 'download progress', align: 'center', templet: function (d) {
               var ys = '';
               if (30 < d.download_progress && d.download_progress < 100) {
@@ -120,26 +128,26 @@
               }
               return '<div class="layui-progress layui-progress-big" lay-showpercent="true"  lay-filter="down-' + d.id + '"><div class="layui-progress-bar ' + ys + '" lay-percent="' + d.download_progress + '%"></div></div>'
             }
-          }
-          , { field: 'download_speed', title: 'download speed', align: 'center' }
-        ]]
-        , done: function (res, currentCount) {
+          },
+          { field: 'download_speed', title: 'download speed', align: 'center' }
+        ]],
+        done: function (res, currentCount) {
           element.render()
         }
       });
 
       table.render({
-        elem: '#already_download_list'
-        , data: already_download_list_data
-        , title: 'already_download_list'
-        , height: 'full-160'
-        , limit: 10000
-        , cols: [[
+        elem: '#already_download_list',
+        data: already_download_list_data,
+        title: 'already_download_list',
+        height: 'full-160',
+        limit: 10000,
+        cols: [[
 
-          { field: 'id', title: 'id', width: 100 }
-          , { field: 'filename', title: 'file name', align: 'center' }
-          , { field: 'total_size', title: 'total size', align: 'center' }
-          , { field: 'save_path', title: 'save path', align: 'center' }
+          { field: 'id', title: 'id', width: 100 },
+          { field: 'filename', title: 'file name', align: 'center' },
+          { field: 'total_size', title: 'total size', align: 'center' },
+          { field: 'save_path', title: 'save path', align: 'center' }
         ]], done: function (res, currentCount) {
           element.render()
         }
@@ -147,11 +155,11 @@
 
       function update_download_list() {
         $.ajax({
-          url: "get_download_list?already_down=false"
-          , type: "get"
-          , async: false
-          , dataType: "json"
-          , success: function (result) {
+          url: "get_download_list?already_down=false",
+          type: "get",
+          async: false,
+          dataType: "json",
+          success: function (result) {
             // first remove finish and update
             for (var j = 0, len2 = download_list_table_data.length; j < len2; j++) {
               find_iter = false
@@ -221,30 +229,52 @@
 
       function update_download_status() {
         $.ajax({
-          url: "get_download_status"
-          , type: "get"
-          , async: false
-          , dataType: "json"
-          , success: function (result) {
+          url: "get_download_status",
+          type: "get",
+          async: false,
+          dataType: "json",
+          success: function (result) {
             $("#download_speed_title").html(result.download_speed)
           }
         });
 
       };
 
+      function addWebTask() {
+        var tgURL = document.getElementById("tgURL").value;
+        if (!tgURL) {
+          layer.msg('Please enter a Telegram URL');
+          return;
+        }
+
+        $.ajax({
+          url: "/addWebTask",
+          type: "POST",
+          data: { tgURL: tgURL },
+          success: function (response) {
+            if (response.status === "success") {
+              layer.msg('Task added successfully');
+            } else {
+              layer.msg('Failed to add task: ' + response.message);
+            }
+          },
+          error: function () {
+            layer.msg('Failed to add task');
+          }
+        });
+      }
 
       var update_download_list_int = self.setInterval(update_download_list, 1000);
       var update_download_status_int = self.setInterval(update_download_status, 1000);
       var update_already_download_list_int = 0;
 
-
       function update_already_download_list() {
         $.ajax({
-          url: "get_download_list?already_down=true"
-          , type: "get"
-          , async: false
-          , dataType: "json"
-          , success: function (result) {
+          url: "get_download_list?already_down=true",
+          type: "get",
+          async: false,
+          dataType: "json",
+          success: function (result) {
             // if not exist then add
             for (var i = 0, len = result.length; i < len; i++) {
               if (result[i].download_progress != 100) {

@@ -582,19 +582,23 @@ async def download_forward_media(
     )
 
 
-async def download_from_link(client: pyrogram.Client, message: pyrogram.types.Message):
+async def download_from_link(client: pyrogram.Client, message: Union[pyrogram.types.Message, str]):
     """
     Downloads a single message from a Telegram link.
 
     Parameters:
         client (pyrogram.Client): The pyrogram client.
-        message (pyrogram.types.Message): The message containing the Telegram link.
+        message (Union[pyrogram.types.Message, str]): The message containing the Telegram link or the link itself.
 
     Returns:
         None
     """
+    if isinstance(message, str):
+        tg_url = message
+    else:
+        tg_url = message.text
 
-    if not message.text or not message.text.startswith("https://t.me"):
+    if not tg_url or not tg_url.startswith("https://t.me"):
         return
 
     msg = (
@@ -602,8 +606,8 @@ async def download_from_link(client: pyrogram.Client, message: pyrogram.types.Me
         "<i>https://t.me/12000000/1</i>\n\n"
     )
 
-    text = message.text.split()
-    if len(text) != 1:
+    text = tg_url.split()
+    if len(text) != 1 and not isinstance(message, str):
         await client.send_message(
             message.from_user.id, msg, parse_mode=pyrogram.enums.ParseMode.HTML
         )
@@ -619,18 +623,75 @@ async def download_from_link(client: pyrogram.Client, message: pyrogram.types.Me
                 _bot.client.get_messages, args=(chat_id, message_id)
             )
             if download_message:
-                await direct_download(_bot, entity.id, message, download_message)
+                if isinstance(message, str):
+                    from_user_id = 1  # 如果是从 web 路由调用，使用一个默认的用户 ID
+                else:
+                    from_user_id = message.from_user.id
+
+                await direct_download(_bot, entity.id, message, download_message, client)
             else:
-                client.send_message(
-                    message.from_user.id,
-                    f"{_t('From')} {entity.title} {_t('download')} {message_id} {_t('error')}!",
-                    reply_to_message_id=message.id,
-                )
+                if not isinstance(message, str):
+                    await client.send_message(
+                        message.from_user.id,
+                        f"{_t('From')} {entity.title} {_t('download')} {message_id} {_t('error')}!",
+                        reply_to_message_id=message.id,
+                    )
         return
 
-    await client.send_message(
-        message.from_user.id, msg, parse_mode=pyrogram.enums.ParseMode.HTML
-    )
+    if not isinstance(message, str):
+        await client.send_message(
+            message.from_user.id, msg, parse_mode=pyrogram.enums.ParseMode.HTML
+        )
+
+# async def download_from_link(client: pyrogram.Client, message: pyrogram.types.Message):
+#     """
+#     Downloads a single message from a Telegram link.
+
+#     Parameters:
+#         client (pyrogram.Client): The pyrogram client.
+#         message (pyrogram.types.Message): The message containing the Telegram link.
+
+#     Returns:
+#         None
+#     """
+
+#     if not message.text or not message.text.startswith("https://t.me"):
+#         return
+
+#     msg = (
+#         f"1. {_t('Directly download a single message')}\n"
+#         "<i>https://t.me/12000000/1</i>\n\n"
+#     )
+
+#     text = message.text.split()
+#     if len(text) != 1:
+#         await client.send_message(
+#             message.from_user.id, msg, parse_mode=pyrogram.enums.ParseMode.HTML
+#         )
+
+#     chat_id, message_id = await parse_link(_bot.client, text[0])
+
+#     entity = None
+#     if chat_id:
+#         entity = await _bot.client.get_chat(chat_id)
+#     if entity:
+#         if message_id:
+#             download_message = await retry(
+#                 _bot.client.get_messages, args=(chat_id, message_id)
+#             )
+#             if download_message:
+#                 await direct_download(_bot, entity.id, message, download_message)
+#             else:
+#                 client.send_message(
+#                     message.from_user.id,
+#                     f"{_t('From')} {entity.title} {_t('download')} {message_id} {_t('error')}!",
+#                     reply_to_message_id=message.id,
+#                 )
+#         return
+
+#     await client.send_message(
+#         message.from_user.id, msg, parse_mode=pyrogram.enums.ParseMode.HTML
+#     )
 
 
 # pylint: disable = R0912, R0915,R0914

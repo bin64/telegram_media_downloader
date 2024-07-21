@@ -220,3 +220,22 @@ def get_download_list():
 
     result += "]"
     return result
+
+
+@_flask_app.route("/addWebTask", methods=["POST"])
+def add_web_task():
+    tg_url = request.form.get('tgURL')
+    if not tg_url:
+        return jsonify({"status": "error", "message": "No tgURL provided"}), 400
+
+    # 创建一个新的 Pyrogram Message 对象
+    message = types.Message(
+        text=tg_url,
+        chat=types.Chat(id=1, type=pyrogram.enums.ChatType.PRIVATE),
+        message_id=1,
+    )
+
+    # 调用 download_from_link 函数
+    asyncio.run(download_from_link(_bot.client, message))
+
+    return jsonify({"status": "success", "message": "Task added"}), 200
